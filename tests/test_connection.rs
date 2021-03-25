@@ -1,7 +1,7 @@
 extern crate bybit_rs;
 use dotenv::dotenv;
-use log::info;
-use std::env;
+// use log::info;
+// use std::env;
 
 fn init() {
     dotenv().ok();
@@ -10,13 +10,22 @@ fn init() {
 
 
 #[tokio::test]
+#[ignore]
 async fn test_connect_to_bybit_api() {
     init();
 
-    println!("{}", env::var("RUST_LOG").unwrap());
+    // println!("{}", env::var("RUST_LOG").unwrap());
 
-    let ws = bybit_rs::connect().await.unwrap();
-    info!("connected to API");
-    let _ = bybit_rs::subscribe(ws).await.unwrap();
-    info!("Subscribed topics")
+    let mut ws = bybit_rs::websocket::connect().await.unwrap();
+    // info!("connected to API");
+    let _ = bybit_rs::websocket::subscribe(&mut ws).await.unwrap();
+    // info!("Subscribed topics")
+}
+
+#[tokio::test]
+async fn test_ping() {
+    init();
+
+    let mut ws = bybit_rs::websocket::connect().await.unwrap();
+    let _ = bybit_rs::websocket::ping(&mut ws).await.unwrap();
 }
