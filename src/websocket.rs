@@ -1,7 +1,7 @@
 #![allow(unused)]
 mod structs;
-pub use structs::{API, Endpoint};
-use structs::{WebsocketResponse, WsArgs};
+pub use structs::{WebsocketResponse, Endpoint, API};
+use structs::WsArgs;
 
 use async_tungstenite::{
     async_std::{connect_async, ConnectStream},
@@ -90,7 +90,7 @@ impl<EndpointType, ApiType, WsType> WebsocketBuilder<EndpointType, ApiType, WsTy
 }
 
 impl Websocket {
-    pub async fn connect(mut self) -> Result<()> {
+    pub async fn connect(&mut self) -> Result<()> {
         let url: Url = match self.endpoint {
             Endpoint::MAINNET => Url::parse("wss://stream.bybit.com/realtime").unwrap(),
             // Url::parse("wss://ws_stream.bytick.com/realtime").unwrap();
@@ -105,7 +105,7 @@ impl Websocket {
         Ok(())
     }
 
-    pub async fn authenticate(mut self) -> Result<()> {
+    pub async fn authenticate(&mut self) -> Result<()> {
         let now = SystemTime::now();
         let unix_time = now.duration_since(UNIX_EPOCH).expect("back to the future");
         let expires = (unix_time.as_secs() + 10) * 1000;
@@ -117,7 +117,7 @@ impl Websocket {
 
         let auth = WsArgs {
             op: "auth".to_owned(),
-            args: Some([self.api.key, expires.to_string(), signature].to_vec()),
+            args: Some([self.api.key.clone(), expires.to_string(), signature].to_vec()),
         };
         debug!("{}", serde_json::to_string(&auth).unwrap());
 
@@ -155,7 +155,7 @@ impl Websocket {
         }
     }
 
-    pub async fn subscribe(mut self) -> Result<()> {
+    pub async fn subscribe(&mut self) -> Result<()> {
         let subscribe = WsArgs {
             op: "subscribe".to_owned(),
             args: Some(
@@ -170,37 +170,39 @@ impl Websocket {
         self.ws_stream.send(subscribe.into_msg()).await?;
         info!("Sent subscribe message");
 
-        match self.ws_stream.next().await {
-            Some(msg) => {
-                let msg = msg?;
-                let msg_json: Value = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
-                debug!("{}", serde_json::to_string_pretty(&msg_json).unwrap());
+        Ok(())
 
-                match msg_json["success"] {
-                    Value::Bool(true) => {
-                        info!("Subscription successful");
-                        Ok(())
-                    }
-                    _ => {
-                        error!("Subscription Failed: the subscribed topics may are invalid");
-                        Err(Error::Http(
-                            Response::builder()
-                                .body(Some("Subscription Failed".to_owned()))
-                                .unwrap(),
-                        ))
-                    }
-                }
-            }
-            None => Err(Error::Http(
-                Response::builder()
-                    .status(StatusCode::NO_CONTENT)
-                    .body(Some("Nothing returned".to_owned()))
-                    .unwrap(),
-            )),
-        }
+        // match self.ws_stream.next().await {
+        //     Some(msg) => {
+        //         let msg = msg?;
+        //         let msg_json: Value = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
+        //         debug!("{}", serde_json::to_string_pretty(&msg_json).unwrap());
+
+        //         match msg_json["success"] {
+        //             Value::Bool(true) => {
+        //                 info!("Subscription successful");
+        //                 Ok(())
+        //             }
+        //             _ => {
+        //                 error!("Subscription Failed: the subscribed topics may are invalid");
+        //                 Err(Error::Http(
+        //                     Response::builder()
+        //                         .body(Some("Subscription Failed".to_owned()))
+        //                         .unwrap(),
+        //                 ))
+        //             }
+        //         }
+        //     }
+        //     None => Err(Error::Http(
+        //         Response::builder()
+        //             .status(StatusCode::NO_CONTENT)
+        //             .body(Some("Nothing returned".to_owned()))
+        //             .unwrap(),
+        //     )),
+        // }
     }
 
-    pub async fn ping(mut self) -> Result<()> {
+    pub async fn ping(&mut self) -> Result<()> {
         let ping = WsArgs {
             op: "ping".to_owned(),
             args: None,
@@ -239,10 +241,13 @@ impl Websocket {
         }
     }
 
-    // pub async fn on_message(&self) -> Result<()> {
-    //     while let Some(msg) = self.ws_stream.next().await {
-    //         let msg = msg?;
-    //         let msg_json = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
-    //     }
-    // }
+    pub async fn on_message(&mut self) -> Result<()> {
+        while let Some(msg) = self.ws_stream.next().await {
+            let msg = msg?;
+            let msg_json: Value = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
+            debug!("{:#?}", msg_json);
+        }
+
+        Ok(())
+    }
 }
