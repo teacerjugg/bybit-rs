@@ -1,7 +1,6 @@
-#![allow(unused)]
-mod structs;
-pub use structs::{WebsocketResponse, Endpoint, API};
-use structs::WsArgs;
+pub use crate::enums::Endpoint;
+use crate::structs::WsArgs;
+pub use crate::structs::API;
 
 use async_tungstenite::{
     async_std::{connect_async, ConnectStream},
@@ -12,9 +11,13 @@ use async_tungstenite::{
     WebSocketStream,
 };
 
+use crate::serde_timestamp;
+use crate::store;
+use chrono::{DateTime, Utc};
 use futures::{SinkExt, StreamExt};
 use hmac::{Hmac, Mac, NewMac};
-use log::{debug, error, info};
+use log::{debug, error, info, log_enabled, Level};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -244,10 +247,29 @@ impl Websocket {
     pub async fn on_message(&mut self) -> Result<()> {
         while let Some(msg) = self.ws_stream.next().await {
             let msg = msg?;
-            let msg_json: Value = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
-            debug!("{:#?}", msg_json);
+            debug!("{:#?}", msg);
+
+            let msg_json: WebsocketResponse =
+                serde_json::from_str(&msg.into_text().unwrap()).unwrap();
+            if log_enabled!(Level::Debug) {
+                debug!("{:#?}", serde_json::to_string(&msg_json).unwrap());
+            }
+
+            store::store_message(msg_json);
         }
 
         Ok(())
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WebsocketResponse {
+    // cross_seq: u64,
+    pub topic: String,
+    #[serde(rename(deserialize = "type", serialize = "type"))]
+    pub msg_type: String,
+    #[serde(rename(deserialize = "timestamp_e6"))]
+    #[serde(with = "serde_timestamp")]
+    pub timestamp: DateTime<Utc>,
+    pub data: Value,
 }

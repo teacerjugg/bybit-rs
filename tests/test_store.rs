@@ -1,10 +1,11 @@
-extern crate bybit_rs;
 mod common;
+
+extern crate bybit_rs;
+use bybit_rs::store;
 use bybit_rs::websocket::WebsocketResponse;
-use log::debug;
 
 #[test]
-fn deserialize_response() -> common::BEResult {
+fn store_message() -> common::BEResult {
     common::init();
 
     let data = r#"
@@ -29,9 +30,7 @@ fn deserialize_response() -> common::BEResult {
         }"#;
 
     let res: WebsocketResponse = serde_json::from_str(data)?;
-    // let res: Value = serde_json::from_str(data).expect("Failed to deserialize JSON");
-
-    debug!("{:#?}", res);
+    store::store_message(res);
 
     Ok(())
 }

@@ -1,24 +1,14 @@
+mod common;
 extern crate bybit_rs;
 use async_std::future::timeout;
 use bybit_rs::websocket::{Endpoint, WebsocketBuilder, API};
-use dotenv::dotenv;
 use std::env;
-use std::error::Error;
 use std::time::Duration;
-
-type BEResult = Result<(), Box<dyn Error>>;
-
-fn init() {
-    dotenv().ok();
-    // let _ = env_logger::builder().is_test(false).try_init();
-    // let _ = pretty_env_logger::formatted_builder().is_test(true).try_init();
-    pretty_env_logger::init();
-}
 
 #[tokio::test]
 #[ignore]
 async fn connect() {
-    init();
+    common::init();
 
     let api: API = API {
         key: env::var("API_KEY").unwrap(),
@@ -33,8 +23,9 @@ async fn connect() {
 
 #[tokio::test]
 #[ignore]
-async fn subscribe() -> BEResult {
-    init();
+async fn subscribe() -> common::BEResult {
+    common::init();
+
     let api: API = API {
         key: env::var("API_KEY").unwrap(),
         secret: env::var("API_SECRET").unwrap(),
@@ -55,7 +46,7 @@ async fn subscribe() -> BEResult {
 #[tokio::test]
 #[ignore]
 async fn ping() {
-    init();
+    common::init();
 
     let api: API = API {
         key: env::var("API_KEY").unwrap(),
@@ -72,7 +63,7 @@ async fn ping() {
 
 #[tokio::test]
 async fn on_message() {
-    init();
+    common::init();
 
     let api: API = API {
         key: env::var("API_KEY").unwrap(),
@@ -86,5 +77,7 @@ async fn on_message() {
         .await;
     ws.subscribe().await.unwrap();
 
-    assert!(timeout(Duration::from_secs(10), ws.on_message()).await.is_err());
+    assert!(timeout(Duration::from_secs(1), ws.on_message())
+        .await
+        .is_err());
 }
