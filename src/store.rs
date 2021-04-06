@@ -43,11 +43,47 @@ pub fn store_message(res: WebsocketResponse) {
             }
             "delta" => {
                 orderbook.timestamp = res.timestamp;
+                if let Value::Object(data) = res.data {
+                    data.get("delete")
+                        .unwrap()
+                        .as_array()
+                        .unwrap()
+                        .into_iter()
+                        .for_each(|p| {
+                            orderbook
+                                .limits
+                                .remove(&p.get("id").unwrap().as_u64().unwrap());
+                        });
+                    data.get("update")
+                        .unwrap()
+                        .as_array()
+                        .unwrap()
+                        .into_iter()
+                        .for_each(|p| {
+                            orderbook.limits.insert(
+                                p.get("id").unwrap().as_u64().unwrap(),
+                                serde_json::from_value::<Limit>(p.clone())
+                                    .expect("Failed to deserialize response data"),
+                            );
+                        });
+                    data.get("insert")
+                        .unwrap()
+                        .as_array()
+                        .unwrap()
+                        .into_iter()
+                        .for_each(|p| {
+                            orderbook.limits.insert(
+                                p.get("id").unwrap().as_u64().unwrap(),
+                                serde_json::from_value::<Limit>(p.clone())
+                                    .expect("Failed to deserialize response data"),
+                            );
+                        });
+                }
             }
             _ => panic!("Impossible message type"),
         }
         debug!("{:#?}", orderbook);
     } else if res.topic.starts_with("trade") {
-        unimplemented!();
+        todo!();
     }
 }

@@ -5,7 +5,7 @@ use bybit_rs::store;
 use bybit_rs::websocket::WebsocketResponse;
 
 #[test]
-fn store_message() -> common::BEResult {
+fn store_message_snapshot() -> common::BEResult {
     common::init();
 
     let data = r#"
@@ -27,6 +27,47 @@ fn store_message() -> common::BEResult {
             "timestamp_e6": 1616855405687214,
             "topic": "orderBook_200.100ms.BTCUSD",
             "type": "snapshot"
+        }"#;
+
+    let res: WebsocketResponse = serde_json::from_str(data)?;
+    store::store_message(res);
+
+    Ok(())
+}
+
+#[test]
+fn store_message_delta() -> common::BEResult {
+    common::init();
+
+    let data = r#"
+        {
+            "topic": "orderBook_200.100ms.BTCUSD",
+            "type": "delta",
+            "data": {
+                "delete": [{
+                    "price": "58892.50",
+                    "symbol": "BTCUSD",
+                    "id": 588925000,
+                    "side": "Sell"
+                }],
+                "update": [{
+                    "price": "58818.50",
+                    "symbol": "BTCUSD",
+                    "id": 588185000,
+                    "side": "Sell",
+                    "size": 290181
+                }],
+                "insert": [{
+                    "price": "58785.50",
+                    "symbol": "BTCUSD",
+                    "id": 587855000,
+                    "side": "Sell",
+                    "size": 11552
+                }],
+                "transactTimeE6": 0
+            },
+            "cross_seq": 5739038410,
+            "timestamp_e6": 1617702691138576
         }"#;
 
     let res: WebsocketResponse = serde_json::from_str(data)?;

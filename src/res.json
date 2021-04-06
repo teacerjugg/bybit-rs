@@ -1,4 +1,4 @@
-{
+[{
     "cross_seq": 5567735855,
     "data": [{
         "id": 543800000,
@@ -2404,4 +2404,55 @@
     "timestamp_e6": 1616855405687214,
     "topic": "orderBook_200.100ms.BTCUSD",
     "type": "snapshot"
-}
+}, {
+    "topic": "orderBook_200.100ms.BTCUSD",
+    "type": "delta",
+    "data": {
+        "delete": [{
+            "price": "58892.50",
+            "symbol": "BTCUSD",
+            "id": 588925000,
+            "side": "Sell"
+        }, {
+            "price": "58671.00",
+            "symbol": "BTCUSD",
+            "id": 586710000,
+            "side": "Buy"
+        }],
+        "update": [{
+            "price": "58818.50",
+            "symbol": "BTCUSD",
+            "id": 588185000,
+            "side": "Sell",
+            "size": 290181
+        }, {
+            "price": "58790.00",
+            "symbol": "BTCUSD",
+            "id": 587900000,
+            "side": "Sell",
+            "size": 49
+        }, {
+            "price": "58779.00",
+            "symbol": "BTCUSD",
+            "id": 587790000,
+            "side": "Buy",
+            "size": 32098
+        }],
+        "insert": [{
+            "price": "58785.50",
+            "symbol": "BTCUSD",
+            "id": 587855000,
+            "side": "Sell",
+            "size": 11552
+        }, {
+            "price": "58780.50",
+            "symbol": "BTCUSD",
+            "id": 587805000,
+            "side": "Buy",
+            "size": 36364
+        }],
+        "transactTimeE6": 0
+    },
+    "cross_seq": 5739038410,
+    "timestamp_e6": 1617702691138576
+}]
