@@ -84,6 +84,17 @@ pub fn store_message(res: WebsocketResponse) {
         }
         debug!("{:#?}", orderbook);
     } else if res.topic.starts_with("trade") {
-        todo!();
+        let mut records = TRADING_RECORDS
+            .lock()
+            .expect("Failed to lock Mutex<Vec<Record>>");
+
+        if let Value::Array(data) = res.data {
+            data.into_iter().for_each(|r| {
+                records.push(
+                    serde_json::from_value::<Record>(r).expect("Failed to deserialize record"),
+                );
+            })
+        }
+        debug!("{:#?}", records);
     }
 }

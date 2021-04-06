@@ -291,6 +291,7 @@ pub struct WebsocketResponse {
     pub topic: String,
     #[serde(default)]
     #[serde(rename(deserialize = "type", serialize = "type"))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub msg_type: Option<String>,
     #[serde(default)]
     #[serde(rename(deserialize = "timestamp_e6"))]

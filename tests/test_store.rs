@@ -80,5 +80,24 @@ fn store_message_delta() -> common::BEResult {
 fn store_message_record() -> common::BEResult {
     common::init();
 
+    let data = r#"
+        {
+            "topic": "trade.BTCUSD",
+            "data": [{
+                "trade_time_ms": 1617705958803,
+                "timestamp": "2021-04-06T10:45:58.000Z",
+                "symbol": "BTCUSD",
+                "side": "Sell",
+                "size": 9460,
+                "price": 58617,
+                "tick_direction": "ZeroMinusTick",
+                "trade_id": "930ba5dd-67d3-5067-b253-117eb1aeeb7b",
+                "cross_seq": 5739533035
+            }]
+        }"#;
+
+    let res: WebsocketResponse = serde_json::from_str(data)?;
+    store::store_message(res);
+
     Ok(())
 }
