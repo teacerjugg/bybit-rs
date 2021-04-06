@@ -11,7 +11,7 @@ use async_tungstenite::{
     WebSocketStream,
 };
 
-use crate::serde_timestamp;
+use crate::serde_option_timestamp;
 use crate::store;
 use chrono::{DateTime, Utc};
 use futures::{SinkExt, StreamExt};
@@ -250,7 +250,30 @@ impl Websocket {
             debug!("{:#?}", msg);
 
             let msg_json: WebsocketResponse =
-                serde_json::from_str(&msg.into_text().unwrap()).unwrap();
+                match serde_json::from_str::<WebsocketResponse>(msg.to_text().unwrap()) {
+                    Ok(res) => res,
+                    Err(_) => {
+                        match serde_json::from_str::<Value>(msg.to_text().unwrap())
+                            .unwrap()
+                            .get("success")
+                        {
+                            Some(Value::Bool(true)) => {
+                                info!("Subscription successful");
+                                continue;
+                            }
+                            _ => {
+                                error!(
+                                    "Subscription Failed: the subscribed topics may are invalid"
+                                );
+                                return Err(Error::Http(
+                                    Response::builder()
+                                        .body(Some("Subscription Failed".to_owned()))
+                                        .unwrap(),
+                                ));
+                            }
+                        }
+                    }
+                };
             if log_enabled!(Level::Debug) {
                 debug!("{:#?}", serde_json::to_string(&msg_json).unwrap());
             }
@@ -266,10 +289,13 @@ impl Websocket {
 pub struct WebsocketResponse {
     // cross_seq: u64,
     pub topic: String,
+    #[serde(default)]
     #[serde(rename(deserialize = "type", serialize = "type"))]
-    pub msg_type: String,
+    pub msg_type: Option<String>,
+    #[serde(default)]
     #[serde(rename(deserialize = "timestamp_e6"))]
-    #[serde(with = "serde_timestamp")]
-    pub timestamp: DateTime<Utc>,
+    #[serde(with = "serde_option_timestamp")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
     pub data: Value,
 }

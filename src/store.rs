@@ -27,9 +27,9 @@ pub static TRADING_RECORDS: Lazy<Mutex<Vec<Record>>> = Lazy::new(|| {
 pub fn store_message(res: WebsocketResponse) {
     if res.topic.starts_with("orderBook") {
         let mut orderbook = ORDERBOOK.lock().expect("Failed to lock Mutex<HashMap>");
-        match res.msg_type.as_str() {
+        match res.msg_type.unwrap().as_str() {
             "snapshot" => {
-                orderbook.timestamp = res.timestamp;
+                orderbook.timestamp = res.timestamp.unwrap();
                 // res.data.into_par_iter().for_each(|p| { // need parallel?
                 if let Value::Array(data) = res.data {
                     data.into_iter().for_each(|p| {
@@ -42,7 +42,7 @@ pub fn store_message(res: WebsocketResponse) {
                 }
             }
             "delta" => {
-                orderbook.timestamp = res.timestamp;
+                orderbook.timestamp = res.timestamp.unwrap();
                 if let Value::Object(data) = res.data {
                     data.get("delete")
                         .unwrap()

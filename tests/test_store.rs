@@ -75,3 +75,10 @@ fn store_message_delta() -> common::BEResult {
 
     Ok(())
 }
+
+#[test]
+fn store_message_record() -> common::BEResult {
+    common::init();
+
+    Ok(())
+}

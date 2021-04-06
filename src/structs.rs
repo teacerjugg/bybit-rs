@@ -12,8 +12,8 @@ pub struct WsArgs {
 }
 
 impl WsArgs {
-    pub fn into_msg(&self) -> Message {
-        Message::text(serde_json::to_string(self).expect("Failed to serialize Args struct"))
+    pub fn into_msg(self) -> Message {
+        Message::text(serde_json::to_string(&self).expect("Failed to serialize Args struct"))
     }
 }
 
