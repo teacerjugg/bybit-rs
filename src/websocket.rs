@@ -174,35 +174,6 @@ impl Websocket {
         info!("Sent subscribe message");
 
         Ok(())
-
-        // match self.ws_stream.next().await {
-        //     Some(msg) => {
-        //         let msg = msg?;
-        //         let msg_json: Value = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
-        //         debug!("{}", serde_json::to_string_pretty(&msg_json).unwrap());
-
-        //         match msg_json["success"] {
-        //             Value::Bool(true) => {
-        //                 info!("Subscription successful");
-        //                 Ok(())
-        //             }
-        //             _ => {
-        //                 error!("Subscription Failed: the subscribed topics may are invalid");
-        //                 Err(Error::Http(
-        //                     Response::builder()
-        //                         .body(Some("Subscription Failed".to_owned()))
-        //                         .unwrap(),
-        //                 ))
-        //             }
-        //         }
-        //     }
-        //     None => Err(Error::Http(
-        //         Response::builder()
-        //             .status(StatusCode::NO_CONTENT)
-        //             .body(Some("Nothing returned".to_owned()))
-        //             .unwrap(),
-        //     )),
-        // }
     }
 
     pub async fn ping(&mut self) -> Result<()> {
@@ -247,7 +218,6 @@ impl Websocket {
     pub async fn on_message(&mut self) -> Result<()> {
         while let Some(msg) = self.ws_stream.next().await {
             let msg = msg?;
-            // debug!("{:#?}", msg);
 
             let msg_json: WebsocketResponse =
                 match serde_json::from_str::<WebsocketResponse>(msg.to_text().unwrap()) {
@@ -274,9 +244,6 @@ impl Websocket {
                         }
                     }
                 };
-            // if log_enabled!(Level::Debug) {
-            //     debug!("{:#?}", serde_json::to_string(&msg_json).unwrap());
-            // }
 
             store::store_message(msg_json);
         }
@@ -287,7 +254,6 @@ impl Websocket {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WebsocketResponse {
-    // cross_seq: u64,
     pub topic: String,
     #[serde(default)]
     #[serde(rename(deserialize = "type", serialize = "type"))]

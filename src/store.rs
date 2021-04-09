@@ -1,17 +1,11 @@
+use crate::structs::{Limit, OrderBook, Record};
 use crate::websocket::WebsocketResponse;
 use chrono::Utc;
-// use log::debug;
 use once_cell::sync::Lazy;
-// use rayon::prelude::*;
-use crate::structs::{Limit, OrderBook, Record};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-// pub static ORDERBOOK: Lazy<Mutex<HashMap<u64, Limit>>> = Lazy::new(|| {
-//     let mut m = HashMap::new();
-//     Mutex::new(m)
-// });
 pub static ORDERBOOK: Lazy<Mutex<OrderBook>> = Lazy::new(|| {
     Mutex::new(OrderBook {
         limits: HashMap::new(),
@@ -30,7 +24,6 @@ pub fn store_message(res: WebsocketResponse) {
         match res.msg_type.unwrap().as_str() {
             "snapshot" => {
                 orderbook.timestamp = res.timestamp.unwrap();
-                // res.data.into_par_iter().for_each(|p| { // need parallel?
                 if let Value::Array(data) = res.data {
                     data.into_iter().for_each(|p| {
                         orderbook.limits.insert(
@@ -82,7 +75,6 @@ pub fn store_message(res: WebsocketResponse) {
             }
             _ => panic!("Impossible message type"),
         }
-        // debug!("{:#?}", orderbook);
     } else if res.topic.starts_with("trade") {
         let mut records = TRADING_RECORDS
             .lock()
@@ -95,7 +87,6 @@ pub fn store_message(res: WebsocketResponse) {
                 );
             })
         }
-        // debug!("{:#?}", records);
     }
 }
 
