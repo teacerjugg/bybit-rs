@@ -4,7 +4,7 @@ pub enum Endpoint {
     TESTNET,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Order {
     Buy,
     Sell,

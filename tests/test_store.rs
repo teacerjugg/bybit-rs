@@ -1,8 +1,11 @@
 mod common;
 
 extern crate bybit_rs;
+use bybit_rs::prelude::{Endpoint, WebsocketBuilder, WebsocketResponse, API};
 use bybit_rs::store;
-use bybit_rs::websocket::WebsocketResponse;
+use log::{debug, info};
+use std::env;
+use tokio::time::{sleep, Duration};
 
 #[test]
 fn store_message_snapshot() -> common::BEResult {
@@ -98,6 +101,40 @@ fn store_message_record() -> common::BEResult {
 
     let res: WebsocketResponse = serde_json::from_str(data)?;
     store::store_message(res);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn get_data() -> common::BEResult {
+    common::init();
+
+    let api: API = API {
+        key: env::var("API_KEY").unwrap(),
+        secret: env::var("API_SECRET").unwrap(),
+    };
+
+    let mut ws = WebsocketBuilder::new()
+        .endpoint(Endpoint::MAINNET)
+        .api(api)
+        .build()
+        .await;
+    ws.subscribe().await?;
+
+    let _handle = tokio::spawn(async move {
+        ws.on_message().await.unwrap();
+    });
+    info!("Spawned on_message function");
+    sleep(Duration::from_secs(1)).await;
+    // let _ = handle.await.unwrap();
+
+    debug!("{:#?}", bybit_rs::store::take_trading_records());
+    debug!("{:#?}", bybit_rs::store::take_orderbook());
+
+    sleep(Duration::from_secs(1)).await;
+
+    debug!("{:#?}", bybit_rs::store::take_trading_records());
+    debug!("{:#?}", bybit_rs::store::take_orderbook());
 
     Ok(())
 }

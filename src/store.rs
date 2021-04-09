@@ -1,6 +1,6 @@
 use crate::websocket::WebsocketResponse;
 use chrono::Utc;
-use log::debug;
+// use log::debug;
 use once_cell::sync::Lazy;
 // use rayon::prelude::*;
 use crate::structs::{Limit, OrderBook, Record};
@@ -82,7 +82,7 @@ pub fn store_message(res: WebsocketResponse) {
             }
             _ => panic!("Impossible message type"),
         }
-        debug!("{:#?}", orderbook);
+        // debug!("{:#?}", orderbook);
     } else if res.topic.starts_with("trade") {
         let mut records = TRADING_RECORDS
             .lock()
@@ -95,6 +95,14 @@ pub fn store_message(res: WebsocketResponse) {
                 );
             })
         }
-        debug!("{:#?}", records);
+        // debug!("{:#?}", records);
     }
+}
+
+pub fn take_orderbook() -> OrderBook {
+    ORDERBOOK.lock().unwrap().clone()
+}
+
+pub fn take_trading_records() -> Vec<Record> {
+    TRADING_RECORDS.lock().unwrap().drain(..).collect()
 }

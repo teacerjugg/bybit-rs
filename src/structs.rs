@@ -37,13 +37,13 @@ pub struct Record {
     pub tick_direction: Tick,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct OrderBook {
     pub limits: HashMap<u64, Limit>,
     pub timestamp: DateTime<Utc>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Limit {
     #[serde(deserialize_with = "deserialize_price")]
     pub price: f32,

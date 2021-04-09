@@ -16,7 +16,7 @@ use crate::store;
 use chrono::{DateTime, Utc};
 use futures::{SinkExt, StreamExt};
 use hmac::{Hmac, Mac, NewMac};
-use log::{debug, error, info, log_enabled, Level};
+use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::Sha256;
@@ -60,7 +60,7 @@ impl<WsType> WebsocketBuilder<Endpoint, API, WsType> {
         }
     }
 
-    async fn connect(&self) -> Result<WSConnection> {
+    async fn connect(self) -> Result<WSConnection> {
         let url: Url = match self.endpoint {
             Endpoint::MAINNET => Url::parse("wss://stream.bybit.com/realtime").unwrap(),
             // Url::parse("wss://ws_stream.bytick.com/realtime").unwrap();
@@ -68,7 +68,7 @@ impl<WsType> WebsocketBuilder<Endpoint, API, WsType> {
         };
 
         let (ws_stream, _) = connect_async(url).await?;
-        info!("Connected to websocket");
+        info!("Connected to websocket API");
 
         Ok(ws_stream)
     }
@@ -247,7 +247,7 @@ impl Websocket {
     pub async fn on_message(&mut self) -> Result<()> {
         while let Some(msg) = self.ws_stream.next().await {
             let msg = msg?;
-            debug!("{:#?}", msg);
+            // debug!("{:#?}", msg);
 
             let msg_json: WebsocketResponse =
                 match serde_json::from_str::<WebsocketResponse>(msg.to_text().unwrap()) {
@@ -274,9 +274,9 @@ impl Websocket {
                         }
                     }
                 };
-            if log_enabled!(Level::Debug) {
-                debug!("{:#?}", serde_json::to_string(&msg_json).unwrap());
-            }
+            // if log_enabled!(Level::Debug) {
+            //     debug!("{:#?}", serde_json::to_string(&msg_json).unwrap());
+            // }
 
             store::store_message(msg_json);
         }
