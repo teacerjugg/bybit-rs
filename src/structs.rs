@@ -1,5 +1,4 @@
 use crate::enums::{Order, Tick};
-use crate::serde_record_timestamp;
 use async_tungstenite::tungstenite::protocol::Message;
 use chrono::{DateTime, Utc};
 use serde::{self, Deserialize, Deserializer, Serialize};
@@ -88,7 +87,7 @@ mod serde_side {
     }
 }
 
-pub mod serde_tick {
+mod serde_tick {
     use super::Tick;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
@@ -117,5 +116,26 @@ pub mod serde_tick {
             "ZeroPlusTick" => Ok(Tick::ZeroPlusTick),
             _ => panic!("Impossible tick direction"),
         }
+    }
+}
+
+mod serde_record_timestamp {
+    use chrono::{DateTime, TimeZone, Utc};
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(date: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = date.to_rfc3339();
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = i64::deserialize(deserializer)?;
+        Ok(Utc.timestamp_millis(s))
     }
 }
