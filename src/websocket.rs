@@ -1,4 +1,4 @@
-pub use crate::enums::Endpoint;
+pub use crate::enums::{Endpoint, Topic};
 use crate::structs::WsArgs;
 pub use crate::structs::API;
 
@@ -157,16 +157,10 @@ impl Websocket {
         }
     }
 
-    pub async fn subscribe(&mut self) -> Result<()> {
+    pub async fn subscribe(&mut self, topics: Vec<Topic>) -> Result<()> {
         let subscribe = WsArgs {
             op: "subscribe".to_owned(),
-            args: Some(
-                [
-                    "orderBook_200.100ms.BTCUSD".to_owned(),
-                    "trade.BTCUSD".to_owned(),
-                ]
-                .to_vec(),
-            ),
+            args: Some(topics.into_iter().map(|t| t.into_string()).collect()),
         };
 
         self.ws_stream.send(subscribe.into_msg()).await?;
@@ -227,7 +221,7 @@ impl Websocket {
                         if let Ok(res) = serde_json::from_str::<Value>(msg.to_text().unwrap()) {
                             if res["success"] == Value::Bool(true) {
                                 if res["ret_msg"] == "pong" {
-                                    info!("Ping successful");
+                                    debug!("Ping successful");
                                 } else {
                                     info!("Subscription successful");
                                 }

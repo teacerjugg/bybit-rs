@@ -76,6 +76,8 @@ fn store_message_delta() -> common::BEResult {
     let res: WebsocketResponse = serde_json::from_str(data)?;
     store::store_message(res);
 
+    debug!("{:#?}", store::take_orderbook());
+
     Ok(())
 }
 
@@ -101,6 +103,8 @@ fn store_message_record() -> common::BEResult {
 
     let res: WebsocketResponse = serde_json::from_str(data)?;
     store::store_message(res);
+
+    debug!("{:#?}", store::take_trading_records());
 
     Ok(())
 }

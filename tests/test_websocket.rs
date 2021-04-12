@@ -102,7 +102,12 @@ async fn run_forever() -> common::BEResult {
     //     .is_ok());
     let _ = ws.run_forever().await;
 
-    sleep(Duration::from_secs(20)).await;
+    sleep(Duration::from_secs(5)).await;
+
+    debug!("{:#?}", bybit_rs::store::take_trading_records());
+    debug!("{:#?}", bybit_rs::store::take_orderbook());
+
+    sleep(Duration::from_secs(2)).await;
 
     debug!("{:#?}", bybit_rs::store::take_trading_records());
     debug!("{:#?}", bybit_rs::store::take_orderbook());
