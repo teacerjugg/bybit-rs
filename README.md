@@ -3,6 +3,9 @@
 USE OF THIS LIBRARY IS AT YOUR OWN RISK.  
 YOU UNDERSTAND AND AGREE THAT YOU MAY LOSE YOUR MONEY AND YOU ACCEPT FULL RESPONSIBILITY FOR ANY SUCH LOSS.
 
+本ライブラリの使用は自己責任となります．  
+金銭損失の可能性があり，すべての責任が自身にあることを理解・同意してください．  
+
 # Description
 
 <!-- Bybit API library for Rust.   -->

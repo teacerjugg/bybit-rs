@@ -184,70 +184,89 @@ impl Websocket {
         self.ws_stream.send(ping.into_msg()).await?;
         debug!("Sent ping");
 
-        match self.ws_stream.next().await {
-            Some(msg) => {
-                let msg = msg?;
-                let msg_json: Value = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
-                debug!("{:?}", &msg_json);
+        Ok(())
 
-                match msg_json["success"] {
-                    Value::Bool(true) => {
-                        debug!("Ping successful");
-                        Ok(())
-                    }
-                    _ => {
-                        error!("Ping Failed");
-                        Err(Error::Http(
-                            Response::builder()
-                                .body(Some("Ping Failed".to_owned()))
-                                .unwrap(),
-                        ))
-                    }
-                }
-            }
-            None => Err(Error::Http(
-                Response::builder()
-                    .status(StatusCode::NO_CONTENT)
-                    .body(Some("Nothing returned".to_owned()))
-                    .unwrap(),
-            )),
-        }
+        // match self.ws_stream.next().await {
+        //     Some(msg) => {
+        //         let msg = msg?;
+        //         let msg_json: Value = serde_json::from_str(&msg.into_text().unwrap()).unwrap();
+        //         debug!("{:?}", &msg_json);
+
+        //         match msg_json["success"] {
+        //             Value::Bool(true) => {
+        //                 debug!("Ping successful");
+        //                 Ok(())
+        //             }
+        //             _ => {
+        //                 error!("Ping Failed");
+        //                 Err(Error::Http(
+        //                     Response::builder()
+        //                         .body(Some("Ping Failed".to_owned()))
+        //                         .unwrap(),
+        //                 ))
+        //             }
+        //         }
+        //     }
+        //     None => Err(Error::Http(
+        //         Response::builder()
+        //             .status(StatusCode::NO_CONTENT)
+        //             .body(Some("Nothing returned".to_owned()))
+        //             .unwrap(),
+        //     )),
+        // }
     }
 
     pub async fn on_message(&mut self) -> Result<()> {
-        while let Some(msg) = self.ws_stream.next().await {
+        if let Some(msg) = self.ws_stream.next().await {
             let msg = msg?;
 
             let msg_json: WebsocketResponse =
                 match serde_json::from_str::<WebsocketResponse>(msg.to_text().unwrap()) {
                     Ok(res) => res,
                     Err(_) => {
-                        match serde_json::from_str::<Value>(msg.to_text().unwrap())
-                            .unwrap()
-                            .get("success")
-                        {
-                            Some(Value::Bool(true)) => {
-                                info!("Subscription successful");
-                                continue;
+                        if let Ok(res) = serde_json::from_str::<Value>(msg.to_text().unwrap()) {
+                            if res["success"] == Value::Bool(true) {
+                                if res["ret_msg"] == "pong" {
+                                    info!("Ping successful");
+                                } else {
+                                    info!("Subscription successful");
+                                }
                             }
-                            _ => {
-                                error!(
-                                    "Subscription Failed: the subscribed topics may are invalid"
-                                );
-                                return Err(Error::Http(
-                                    Response::builder()
-                                        .body(Some("Subscription Failed".to_owned()))
-                                        .unwrap(),
-                                ));
-                            }
+                            return Ok(());
+                        } else {
+                            error!("Subscription Failed: the subscribed topics may are invalid");
+                            return Err(Error::Http(
+                                Response::builder()
+                                    .body(Some("Subscription Failed".to_owned()))
+                                    .unwrap(),
+                            ));
                         }
                     }
                 };
-
             store::store_message(msg_json);
         }
 
         Ok(())
+    }
+
+    pub async fn run_forever(mut self) {
+        tokio::spawn(async move {
+            self.ping().await.expect("Ping Failed");
+            let mut now = SystemTime::now();
+
+            loop {
+                if let Ok(elapsed) = now.elapsed() {
+                    if elapsed.as_secs() >= 60 {
+                        self.ping().await.expect("Ping Failed");
+                        now = SystemTime::now();
+                    }
+                }
+
+                self.on_message().await.unwrap();
+            }
+        });
+        // .await
+        // .unwrap();
     }
 }
 

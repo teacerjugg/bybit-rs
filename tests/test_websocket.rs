@@ -1,9 +1,11 @@
 mod common;
 extern crate bybit_rs;
-use async_std::future::timeout;
+// use async_std::future::timeout;
 use bybit_rs::websocket::{Endpoint, WebsocketBuilder, API};
 use std::env;
-use std::time::Duration;
+// use std::time::Duration;
+use log::debug;
+use tokio::time::{sleep, Duration};
 
 #[tokio::test]
 #[ignore]
@@ -23,7 +25,7 @@ async fn connect() {
 
 #[tokio::test]
 #[ignore]
-async fn subscribe() -> common::BEResult {
+async fn subscribe() {
     common::init();
 
     let api: API = API {
@@ -31,16 +33,13 @@ async fn subscribe() -> common::BEResult {
         secret: env::var("API_SECRET").unwrap(),
     };
 
-    // println!("{}", env::var("RUST_LOG").unwrap());
-
     let mut ws = WebsocketBuilder::new()
         .endpoint(Endpoint::MAINNET)
         .api(api)
         .build()
         .await;
-    let _ = ws.subscribe().await?;
 
-    Ok(())
+    assert!(ws.subscribe().await.is_ok());
 }
 
 #[tokio::test]
@@ -58,10 +57,12 @@ async fn ping() {
         .api(api)
         .build()
         .await;
-    let _ = ws.ping().await;
+
+    assert!(ws.ping().await.is_ok());
 }
 
 #[tokio::test]
+#[ignore]
 async fn on_message() {
     common::init();
 
@@ -77,7 +78,34 @@ async fn on_message() {
         .await;
     ws.subscribe().await.unwrap();
 
-    assert!(timeout(Duration::from_secs(1), ws.on_message())
-        .await
-        .is_err());
+    assert!(ws.on_message().await.is_ok());
+}
+
+#[tokio::test]
+async fn run_forever() -> common::BEResult {
+    common::init();
+
+    let api: API = API {
+        key: env::var("API_KEY").unwrap(),
+        secret: env::var("API_SECRET").unwrap(),
+    };
+
+    let mut ws = WebsocketBuilder::new()
+        .endpoint(Endpoint::MAINNET)
+        .api(api)
+        .build()
+        .await;
+    ws.subscribe().await?;
+
+    // assert!(timeout(Duration::from_secs(10), ws.run_forever())
+    //     .await
+    //     .is_ok());
+    let _ = ws.run_forever().await;
+
+    sleep(Duration::from_secs(20)).await;
+
+    debug!("{:#?}", bybit_rs::store::take_trading_records());
+    debug!("{:#?}", bybit_rs::store::take_orderbook());
+
+    Ok(())
 }

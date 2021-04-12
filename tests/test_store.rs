@@ -122,7 +122,9 @@ async fn get_data() -> common::BEResult {
     ws.subscribe().await?;
 
     let _handle = tokio::spawn(async move {
-        ws.on_message().await.unwrap();
+        loop {
+            ws.on_message().await.unwrap();
+        }
     });
     info!("Spawned on_message function");
     sleep(Duration::from_secs(1)).await;
