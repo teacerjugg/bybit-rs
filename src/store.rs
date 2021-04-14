@@ -113,6 +113,7 @@ pub fn store_message(res: WebsocketResponse) {
     match res.topic.chars().next() {
         Some('o') if res.topic.chars().nth(5).is_some() => orderbook(res), // orderbook
         Some('t') => records(res),                                         // trade
+        Some('i') if res.topic.chars().nth(10).is_none() => todo!(),       // insurance
         Some('i') => instrument(res),                                      // instrument_info
         Some('k') => todo!(),                                              // kline
         Some('p') => todo!(),                                              // position

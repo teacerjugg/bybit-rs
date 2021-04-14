@@ -1,7 +1,7 @@
 mod common;
 extern crate bybit_rs;
 // use async_std::future::timeout;
-use bybit_rs::websocket::{Endpoint, WebsocketBuilder, API};
+use bybit_rs::websocket::{Endpoint, Topic, WebsocketBuilder, API};
 use std::env;
 // use std::time::Duration;
 use log::debug;
@@ -39,7 +39,10 @@ async fn subscribe() {
         .build()
         .await;
 
-    assert!(ws.subscribe().await.is_ok());
+    assert!(ws
+        .subscribe(vec![Topic::OrderBook200, Topic::Trade])
+        .await
+        .is_ok());
 }
 
 #[tokio::test]
@@ -76,7 +79,9 @@ async fn on_message() {
         .api(api)
         .build()
         .await;
-    ws.subscribe().await.unwrap();
+    ws.subscribe(vec![Topic::OrderBook200, Topic::Trade])
+        .await
+        .unwrap();
 
     assert!(ws.on_message().await.is_ok());
 }
@@ -95,7 +100,8 @@ async fn run_forever() -> common::BEResult {
         .api(api)
         .build()
         .await;
-    ws.subscribe().await?;
+    ws.subscribe(vec![Topic::OrderBook200, Topic::Trade])
+        .await?;
 
     // assert!(timeout(Duration::from_secs(10), ws.run_forever())
     //     .await

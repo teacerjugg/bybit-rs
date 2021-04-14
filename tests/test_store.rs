@@ -109,38 +109,38 @@ fn store_message_record() -> common::BEResult {
     Ok(())
 }
 
-#[tokio::test]
-async fn get_data() -> common::BEResult {
-    common::init();
+// #[tokio::test]
+// async fn get_data() -> common::BEResult {
+//     common::init();
 
-    let api: API = API {
-        key: env::var("API_KEY").unwrap(),
-        secret: env::var("API_SECRET").unwrap(),
-    };
+//     let api: API = API {
+//         key: env::var("API_KEY").unwrap(),
+//         secret: env::var("API_SECRET").unwrap(),
+//     };
 
-    let mut ws = WebsocketBuilder::new()
-        .endpoint(Endpoint::MAINNET)
-        .api(api)
-        .build()
-        .await;
-    ws.subscribe().await?;
+//     let mut ws = WebsocketBuilder::new()
+//         .endpoint(Endpoint::MAINNET)
+//         .api(api)
+//         .build()
+//         .await;
+//     ws.subscribe().await?;
 
-    let _handle = tokio::spawn(async move {
-        loop {
-            ws.on_message().await.unwrap();
-        }
-    });
-    info!("Spawned on_message function");
-    sleep(Duration::from_secs(1)).await;
-    // let _ = handle.await.unwrap();
+//     let _handle = tokio::spawn(async move {
+//         loop {
+//             ws.on_message().await.unwrap();
+//         }
+//     });
+//     info!("Spawned on_message function");
+//     sleep(Duration::from_secs(1)).await;
+//     // let _ = handle.await.unwrap();
 
-    debug!("{:#?}", bybit_rs::store::take_trading_records());
-    debug!("{:#?}", bybit_rs::store::take_orderbook());
+//     debug!("{:#?}", bybit_rs::store::take_trading_records());
+//     debug!("{:#?}", bybit_rs::store::take_orderbook());
 
-    sleep(Duration::from_secs(1)).await;
+//     sleep(Duration::from_secs(1)).await;
 
-    debug!("{:#?}", bybit_rs::store::take_trading_records());
-    debug!("{:#?}", bybit_rs::store::take_orderbook());
+//     debug!("{:#?}", bybit_rs::store::take_trading_records());
+//     debug!("{:#?}", bybit_rs::store::take_orderbook());
 
-    Ok(())
-}
+//     Ok(())
+// }

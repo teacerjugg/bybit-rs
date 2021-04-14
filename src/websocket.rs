@@ -157,7 +157,10 @@ impl Websocket {
         }
     }
 
-    pub async fn subscribe(&mut self, topics: Vec<Topic>) -> Result<()> {
+    pub async fn subscribe<T>(&mut self, topics: T) -> Result<()>
+    where
+        T: IntoIterator<Item = Topic>,
+    {
         let subscribe = WsArgs {
             op: "subscribe".to_owned(),
             args: Some(topics.into_iter().map(|t| t.into_string()).collect()),
