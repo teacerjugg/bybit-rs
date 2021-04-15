@@ -10,6 +10,12 @@ pub enum Order {
     Sell,
 }
 
+impl Default for Order {
+    fn default() -> Self {
+        Order::Buy
+    }
+}
+
 #[derive(Debug)]
 pub enum Tick {
     MinusTick,
@@ -51,5 +57,29 @@ impl Topic {
             Topic::Order => "order",
             Topic::StopOrder => "stop_order",
         })
+    }
+}
+
+pub enum Trigger {
+    LastPrice,
+    IndexPrice,
+    None,
+}
+
+impl Default for Trigger {
+    fn default() -> Self {
+        Trigger::None
+    }
+}
+
+pub enum Status {
+    Normal,
+    Liquidation,
+    AutoDeleveraging,
+}
+
+impl Default for Status {
+    fn default() -> Self {
+        Status::Normal
     }
 }

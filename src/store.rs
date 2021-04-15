@@ -1,4 +1,4 @@
-use crate::structs::{Instrument, Limit, OrderBook, Record};
+use crate::structs::{Instrument, Limit, OrderBook, Position, Record};
 use crate::websocket::WebsocketResponse;
 use chrono::Utc;
 use once_cell::sync::Lazy;
@@ -19,6 +19,7 @@ static TRADING_RECORDS: Lazy<Mutex<Vec<Record>>> = Lazy::new(|| {
 });
 
 static INSTRUMENT: Lazy<Mutex<Instrument>> = Lazy::new(|| Mutex::new(Default::default()));
+static POSITION: Lazy<Mutex<Position>> = Lazy::new(|| Mutex::new(Default::default()));
 
 fn orderbook(res: WebsocketResponse) {
     let mut orderbook = ORDERBOOK.lock().expect("Failed to lock Mutex<HashMap>");
@@ -109,6 +110,12 @@ fn instrument(res: WebsocketResponse) {
     }
 }
 
+fn position(res: WebsocketResponse) {
+    let mut position = POSITION.lock().expect("Failed to lock Mutex<Position>");
+    *position =
+        serde_json::from_value::<Position>(res.data).expect("Failed to deserialize position");
+}
+
 pub fn store_message(res: WebsocketResponse) {
     match res.topic.chars().next() {
         Some('o') if res.topic.chars().nth(5).is_some() => orderbook(res), // orderbook
@@ -116,7 +123,7 @@ pub fn store_message(res: WebsocketResponse) {
         Some('i') if res.topic.chars().nth(10).is_none() => todo!(),       // insurance
         Some('i') => instrument(res),                                      // instrument_info
         Some('k') => todo!(),                                              // kline
-        Some('p') => todo!(),                                              // position
+        Some('p') => position(res),                                        // position
         Some('e') => todo!(),                                              // execution
         Some('o') => todo!(),                                              // order
         Some('s') => todo!(),                                              // stop_order
