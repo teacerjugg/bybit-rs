@@ -1,5 +1,5 @@
 use super::serde_side;
-use crate::enums::Order;
+use crate::websocket::enums::Order;
 use chrono::{DateTime, Utc};
 use serde::{self, Deserialize, Deserializer};
 use std::collections::HashMap;

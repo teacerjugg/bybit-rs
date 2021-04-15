@@ -1,5 +1,5 @@
-use crate::structs::{Instrument, Limit, OrderBook, Position, Record};
-use crate::websocket::WebsocketResponse;
+use super::core::WebsocketResponse;
+use super::structs::{Instrument, Limit, OrderBook, Position, Record};
 use chrono::Utc;
 use once_cell::sync::Lazy;
 use serde_json::Value;
@@ -116,7 +116,7 @@ fn position(res: WebsocketResponse) {
         serde_json::from_value::<Position>(res.data).expect("Failed to deserialize position");
 }
 
-pub fn store_message(res: WebsocketResponse) {
+pub(crate) fn store_message(res: WebsocketResponse) {
     match res.topic.chars().next() {
         Some('o') if res.topic.chars().nth(5).is_some() => orderbook(res), // orderbook
         Some('t') => records(res),                                         // trade

@@ -1,5 +1,5 @@
 use super::serde_tick;
-use crate::enums::Tick;
+use crate::websocket::enums::Tick;
 use serde::{self, Deserialize, Deserializer};
 
 #[derive(Deserialize, Default)]

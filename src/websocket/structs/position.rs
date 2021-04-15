@@ -1,5 +1,5 @@
 use super::serde_side;
-use crate::enums::{Order, Status, Trigger};
+use crate::websocket::enums::{Order, Status, Trigger};
 use serde::{self, Deserialize, Deserializer, Serialize};
 
 #[derive(Serialize, Deserialize, Default)]
@@ -72,7 +72,7 @@ where
 }
 
 mod serde_trigger {
-    use crate::enums::Trigger;
+    use crate::websocket::enums::Trigger;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(side: &Trigger, serializer: S) -> Result<S::Ok, S::Error>
@@ -102,7 +102,7 @@ mod serde_trigger {
 }
 
 mod serde_status {
-    use crate::enums::Status;
+    use crate::websocket::enums::Status;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(side: &Status, serializer: S) -> Result<S::Ok, S::Error>

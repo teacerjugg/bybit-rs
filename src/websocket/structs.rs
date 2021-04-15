@@ -30,7 +30,7 @@ pub struct API {
 }
 
 pub mod serde_side {
-    use crate::enums::Order;
+    use crate::websocket::enums::Order;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(side: &Order, serializer: S) -> Result<S::Ok, S::Error>
@@ -58,7 +58,7 @@ pub mod serde_side {
 }
 
 pub mod serde_tick {
-    use crate::enums::Tick;
+    use crate::websocket::enums::Tick;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(tick: &Tick, serializer: S) -> Result<S::Ok, S::Error>
