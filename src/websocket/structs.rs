@@ -12,7 +12,7 @@ use async_tungstenite::tungstenite::protocol::Message;
 use serde::{self, Serialize};
 
 #[derive(Serialize, Debug)]
-pub struct WsArgs {
+pub(crate) struct WsArgs {
     pub op: String,
     pub args: Option<Vec<String>>,
 }
@@ -29,7 +29,7 @@ pub struct API {
     pub secret: String,
 }
 
-pub mod serde_side {
+pub(crate) mod serde_side {
     use crate::websocket::enums::Order;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
@@ -57,7 +57,7 @@ pub mod serde_side {
     }
 }
 
-pub mod serde_tick {
+pub(crate) mod serde_tick {
     use crate::websocket::enums::Tick;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
