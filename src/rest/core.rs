@@ -1,43 +1,43 @@
-use super::enums::Endpoint;
+use super::{
+    enums::{Interval, Period},
+    structs::RestResponse,
+};
+use crate::common::{Endpoint, Symbol, API};
+use hmac::{Hmac, Mac, NewMac};
 use reqwest::{Client, Result};
-use std::time::Duration;
-use url::Url;
+use sha2::Sha256;
+use std::collections::BTreeMap;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+type HmacSha256 = Hmac<Sha256>;
 
 pub struct Rest {
-    pub endpoint: Url,
-    pub api_key: String,
-    pub timestamp_millis: usize,
-    sign: String,
-    pub ent: Client,
+    pub endpoint: Endpoint,
+    pub api_key: API,
+    pub client: Client,
 }
 
-pub struct RestBuilder<EndpointType, KeyType, TimeType, SignType, Client> {
+pub struct RestBuilder<EndpointType, ApiType, Client> {
     endpoint: EndpointType,
-    api_key: KeyType,
-    timestamp_millis: TimeType,
-    sign: SignType,
+    api_key: ApiType,
     client: Client,
 }
 
-impl RestBuilder<Endpoint, String, usize, SignType, Client> {
+impl RestBuilder<Endpoint, API, Client> {
     pub fn build(self) -> Rest {
         Rest {
-            endpoint: self.endpoint.to_uri(),
+            endpoint: self.endpoint,
             api_key: self.api_key,
-            timestamp_millis: self.timestamp_millis,
             client: self.client,
         }
     }
-
 }
 
-impl RestBuilder<(), (), (), (), Client> {
+impl RestBuilder<(), (), Client> {
     pub fn new() -> Self {
         RestBuilder {
             endpoint: (),
             api_key: (),
-            timestamp_millis: (),
-            sign: (),
             client: Client::builder()
                 .timeout(Duration::from_secs(5))
                 .build()
@@ -46,91 +46,350 @@ impl RestBuilder<(), (), (), (), Client> {
     }
 }
 
-impl<EndpointType, KeyType, TimeType, SignType, Client>
-    RestBuilder<EndpointType, KeyType, TimeType, SignType, Client>
-{
-    pub fn endpoint(
-        self,
-        endpoint: Endpoint,
-    ) -> RestBuilder<Endpoint, KeyType, TimeType, SignType, Client> {
+impl<EndpointType, ApiType, Client> RestBuilder<EndpointType, ApiType, Client> {
+    pub fn endpoint(self, endpoint: Endpoint) -> RestBuilder<Endpoint, ApiType, Client> {
         RestBuilder {
             endpoint,
             api_key: self.api_key,
-            timestamp_millis: self.timestamp_millis,
-            sign: self.sign,
             client: self.client,
         }
     }
 
-    pub fn key(
-        self,
-        api_key: String,
-    ) -> RestBuilder<EndpointType, String, TimeType, SignType, Client> {
+    pub fn key(self, api_key: API) -> RestBuilder<EndpointType, API, Client> {
         RestBuilder {
             endpoint: self.endpoint,
             api_key,
-            timestamp_millis: self.timestamp_millis,
-            sign: self.sign,
             client: self.client,
         }
     }
-
-    pub fn timestamp(
-        self,
-        timestamp_millis: usize,
-    ) -> RestBuilder<EndpointType, KeyType, usize, SignType, Client> {
-        RestBuilder {
-            endpoint: self.endpoint,
-            api_key: self.api_key,
-            timestamp_millis,
-            sign: self.sign,
-            client: self.client,
-        }
-    }
-
-    // pub fn sign(
-    //     self,
-    //     sign: String,
-    // ) -> RestBuilder<EndpointType, KeyType, TimeType, String, Client> {
-    //     RestBuilder {
-    //         endpoint: self.endpoint,
-    //         api_key: self.api_key,
-    //         timestamp_millis: self.timestamp_millis,
-    //         sign,
-    //         client: self.client,
-    //     }
-    // }
 }
 
 impl Rest {
-    pub fn builder() -> RestBuilder<(), (), (), (), Client> {
+    pub fn builder() -> RestBuilder<(), (), Client> {
         RestBuilder::new()
     }
 
-    pub async fn get(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let mut uri = self.endpoint.clone();
-        uri.set_query(Some(&format!("api_key={}", self.api_key)));
-        let resp = reqwest::get(uri).await?;
-        println!("{:#?}", resp);
-        Ok(())
+    // pub async fn get(&self) -> Result<()> {
+    //     let mut uri = self.endpoint.clone();
+    //     uri.set_query(Some(&format!("api_key={}", self.api_key)));
+    //     let resp = reqwest::get(uri).await?;
+    //     println!("{:#?}", resp);
+    //     Ok(())
+    // }
+
+    // pub async fn server_time(&self) -> Result<String> {
+    //     let resp = reqwest::get(self.endpoint.join("/v2/public/time").unwrap())
+    //         .await?
+    //         .json()
+    //         .await?;
+
+    //     Ok(resp)
+    // }
+
+    fn sign(&self, query: &BTreeMap<String, String>) -> String {
+        let query_str = query
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect::<Vec<String>>()
+            .join("&");
+        println!("{}", query_str);
+        let mut mac = HmacSha256::new_varkey(self.api_key.secret.as_bytes()).unwrap();
+        mac.update(query_str.as_bytes());
+        format!("{:x}", mac.finalize().into_bytes())
     }
 
-    pub async fn server_time(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut uri = self.endpoint.clone();
-        uri.join("/v2/public/time");
+    fn construct_query<H>(&self, mut query: BTreeMap<H, H>) -> BTreeMap<String, String>
+    where
+        H: std::string::ToString + Ord,
+    {
+        let now = SystemTime::now();
+        let unix_time = now.duration_since(UNIX_EPOCH).expect("back to the future");
+        let timestamp = unix_time.as_secs() * 1000;
 
-        let resp = reqwest::get(uri).await?.json().await?;
+        let mut query = query
+            .iter_mut()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect::<BTreeMap<String, String>>();
+        query.insert("timestamp".to_string(), timestamp.to_string());
+        query.insert("api_key".to_string(), self.api_key.key.clone());
+        query.insert("sign".to_string(), self.sign(&query));
+
+        // let mut uri = self.endpoint.to_uri();
+        // query.iter().for_each(|(k, v)| {
+        //     uri.query_pairs_mut().append_pair(k, v);
+        // });
+
+        // let uri = self.endpoint.to_uri_with_params(query);
+
+        query
+    }
+
+    pub async fn public_orderbook_l2(&self, symbol: Symbol) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/orderBook/L2";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
 
         Ok(resp)
     }
-    fn sign(&self) -> String {
-        let now = SystemTime::now();
-        let unix_time = now.duration_since(UNIX_EPOCH).expect("back to the future");
-        let expires = unix_time.as_secs() * 1000;
 
-        let args = {
-            "api_key": self.api_key,
-            "timestamp": expires,
-        };
+    pub async fn public_kline_list(
+        &self,
+        symbol: Symbol,
+        interval: Interval,
+        from: usize,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/kline/list";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("interval"), interval.to_string());
+        query.insert(String::from("from"), from.to_string());
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.post(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_tickers(&self, symbol: Option<Symbol>) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/tickers";
+
+        let mut uri = self.endpoint.to_uri();
+        if let Some(symbol) = symbol {
+            uri.set_query(Some(&format!("symbol={}", symbol.to_string())));
+        }
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_trading_records(
+        &self,
+        symbol: Symbol,
+        from: Option<usize>,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/trading-records";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        if let Some(from) = from {
+            query.insert(String::from("from"), from.to_string());
+        }
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_symbols(&self) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/symbols";
+
+        let uri = self.endpoint.to_uri().join(PATH).unwrap();
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_liq_records(
+        &self,
+        symbol: Symbol,
+        from: Option<usize>,
+        limit: Option<usize>,
+        start_time: Option<usize>,
+        end_time: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/liq-records";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        if let Some(from) = from {
+            query.insert(String::from("from"), from.to_string());
+        }
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+        if let Some(start_time) = start_time {
+            query.insert(String::from("start_time"), start_time.to_string());
+        }
+        if let Some(end_time) = end_time {
+            query.insert(String::from("end_time"), end_time.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_open_interest(
+        &self,
+        symbol: Symbol,
+        period: Period,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/open-interest";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("period"), period.to_string());
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_big_deal(
+        &self,
+        symbol: Symbol,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/big-deal";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_server_time(&self) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/time";
+
+        let uri = self.endpoint.to_uri().join(PATH).unwrap();
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn private_order_create<T: ToString>(
+        &self,
+        symbol: Symbol,
+        order_type: T,
+        qty: usize,
+        price: Option<f32>,
+        time_in_force: T,
+        take_profit: Option<f32>,
+        stop_loss: Option<f32>,
+        reduce_only: bool,
+        close_on_trigger: bool,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/private/order/create";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("order_type"), order_type.to_string());
+        query.insert(String::from("qty"), qty.to_string());
+        if let Some(price) = price {
+            query.insert(String::from("price"), price.to_string());
+        }
+        query.insert(String::from("time_in_force"), time_in_force.to_string());
+        if let Some(take_profit) = take_profit {
+            query.insert(String::from("take_profit"), take_profit.to_string());
+        }
+        if let Some(stop_loss) = stop_loss {
+            query.insert(String::from("stop_loss"), stop_loss.to_string());
+        }
+        query.insert(String::from("reduce_only"), reduce_only.to_string());
+        query.insert(
+            String::from("close_on_trigger"),
+            close_on_trigger.to_string(),
+        );
+
+        let mut uri = self
+            .endpoint
+            .to_uri_with_params(self.construct_query(query));
+        uri.set_path(PATH);
+
+        let resp = self.client.post(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::{Endpoint, Symbol, API};
+    use log::debug;
+    use std::collections::BTreeMap;
+    use std::env;
+
+    fn init() {
+        dotenv::dotenv().ok();
+        // let _ = pretty_env_logger::formatted_builder().try_init();
+        pretty_env_logger::init();
+    }
+
+    #[test]
+    fn test_construct_request() {
+        init();
+
+        let mut hash = BTreeMap::new();
+        hash.insert("key", "value");
+
+        let rest = super::RestBuilder::new()
+            .key(API {
+                key: String::from("this-is-key"),
+                secret: String::from("this-is-secret"),
+            })
+            .endpoint(Endpoint::TESTNET)
+            .build();
+
+        debug!("{:#?}", rest.construct_query(hash));
+    }
+
+    #[tokio::test]
+    async fn test_public_orderbook_l2() {
+        init();
+
+        let rest = super::RestBuilder::new()
+            .key(API {
+                key: env::var("TESTNET_API_KEY").unwrap(),
+                secret: env::var("TESTNET_API_SECRET").unwrap(),
+            })
+            .endpoint(Endpoint::TESTNET)
+            .build();
+
+        assert!(rest.public_orderbook_l2(Symbol::BTCUSD).await.is_ok());
+    }
+
+    #[test]
+    fn test_url() {
+        init();
+        let mut uri = reqwest::Url::parse("https://api-testnet.bybit.com").unwrap();
+
+        debug!("{:#?}", uri);
+        uri.set_query(Some("key=val"));
+        debug!("{:#?}", uri);
+        uri.set_path("/v2/orderBook/L2/");
+        debug!("{:#?}", uri);
     }
 }

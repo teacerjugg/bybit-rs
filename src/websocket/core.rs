@@ -1,5 +1,6 @@
-use super::enums::{Endpoint, Topic};
-use super::structs::{WsArgs, API};
+use super::enums::Topic;
+use super::structs::WsArgs;
+use crate::common::{Endpoint, API};
 
 use async_tungstenite::{
     async_std::{connect_async, ConnectStream},
@@ -14,11 +15,11 @@ use chrono::{DateTime, Utc};
 use futures::{SinkExt, StreamExt};
 use hmac::{Hmac, Mac, NewMac};
 use log::{debug, error, info};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
-use url::Url;
 
 type HmacSha256 = Hmac<Sha256>;
 type WSConnection = WebSocketStream<ConnectStream>;
@@ -74,7 +75,7 @@ impl<WsType> WebsocketBuilder<Endpoint, API, WsType> {
 impl<EndpointType, ApiType, WsType> WebsocketBuilder<EndpointType, ApiType, WsType> {
     pub fn endpoint(self, endpoint: Endpoint) -> WebsocketBuilder<Endpoint, ApiType, WsType> {
         WebsocketBuilder {
-            endpoint: endpoint,
+            endpoint,
             api: self.api,
             ws_stream: self.ws_stream,
         }
@@ -83,7 +84,7 @@ impl<EndpointType, ApiType, WsType> WebsocketBuilder<EndpointType, ApiType, WsTy
     pub fn api(self, api: API) -> WebsocketBuilder<EndpointType, API, WsType> {
         WebsocketBuilder {
             endpoint: self.endpoint,
-            api: api,
+            api,
             ws_stream: self.ws_stream,
         }
     }

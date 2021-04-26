@@ -23,12 +23,6 @@ impl WsArgs {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct API {
-    pub key: String,
-    pub secret: String,
-}
-
 pub(crate) mod serde_side {
     use crate::websocket::enums::Order;
     use serde::{self, Deserialize, Deserializer, Serializer};
