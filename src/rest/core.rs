@@ -239,6 +239,78 @@ impl Rest {
         Ok(resp)
     }
 
+    pub async fn public_mark_price_kline(
+        &self,
+        symbol: Symbol,
+        interval: Interval,
+        from: usize,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/mark-price-kline";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("interval"), interval.to_string());
+        query.insert(String::from("from"), from.to_string());
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_index_price_kline(
+        &self,
+        symbol: Symbol,
+        interval: Interval,
+        from: usize,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/index-price-kline";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("interval"), interval.to_string());
+        query.insert(String::from("from"), from.to_string());
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_premium_price_kline(
+        &self,
+        symbol: Symbol,
+        interval: Interval,
+        from: usize,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/premium-index-kline";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("interval"), interval.to_string());
+        query.insert(String::from("from"), from.to_string());
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
     pub async fn public_open_interest(
         &self,
         symbol: Symbol,
@@ -270,6 +342,28 @@ impl Rest {
 
         let mut query = BTreeMap::new();
         query.insert(String::from("symbol"), symbol.to_string());
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn public_account_ratio(
+        &self,
+        symbol: Symbol,
+        period: Period,
+        limit: Option<usize>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/public/account-ratio";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("period"), period.to_string());
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
