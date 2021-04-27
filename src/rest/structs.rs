@@ -21,6 +21,7 @@ fn deserialize_time_now<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Err
 where
     D: Deserializer<'de>,
 {
-    let s = i64::deserialize(deserializer)?;
-    Ok(Utc.timestamp_millis(s))
+    let s = String::deserialize(deserializer)?;
+    let timestamp = s.parse::<f64>().unwrap();
+    Ok(Utc.timestamp_millis((timestamp * 10f64.powi(3)) as i64))
 }

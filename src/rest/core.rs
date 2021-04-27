@@ -4,6 +4,7 @@ use super::{
 };
 use crate::common::{Endpoint, Symbol, API};
 use hmac::{Hmac, Mac, NewMac};
+use maplit::{btreemap, convert_args};
 use reqwest::{Client, Result};
 use sha2::Sha256;
 use std::collections::BTreeMap;
@@ -127,10 +128,8 @@ impl Rest {
     pub async fn public_orderbook_l2(&self, symbol: Symbol) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/orderBook/L2";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-
-        let mut uri = self.endpoint.to_uri_with_params(query);
+        let mut uri = self.endpoint.to_uri();
+        uri.set_query(Some(&format!("symbol={}", symbol.to_string())));
         uri.set_path(PATH);
         let resp = self.client.get(uri).send().await?.json().await?;
 
@@ -146,17 +145,18 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/kline/list";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("interval"), interval.to_string());
-        query.insert(String::from("from"), from.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+            "interval" => interval,
+            "from" => from.to_string(),
+        ));
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
 
         let mut uri = self.endpoint.to_uri_with_params(query);
         uri.set_path(PATH);
-        let resp = self.client.post(uri).send().await?.json().await?;
+        let resp = self.client.get(uri).send().await?.json().await?;
 
         Ok(resp)
     }
@@ -248,10 +248,11 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/mark-price-kline";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("interval"), interval.to_string());
-        query.insert(String::from("from"), from.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+            "interval" => interval,
+            "from" => from.to_string(),
+        ));
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
@@ -272,10 +273,11 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/index-price-kline";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("interval"), interval.to_string());
-        query.insert(String::from("from"), from.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+            "interval" => interval,
+            "from" => from.to_string(),
+        ));
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
@@ -296,10 +298,11 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/premium-index-kline";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("interval"), interval.to_string());
-        query.insert(String::from("from"), from.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+            "interval" => interval,
+            "from" => from.to_string(),
+        ));
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
@@ -319,9 +322,10 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/open-interest";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("period"), period.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+            "period" => period,
+        ));
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
@@ -340,8 +344,9 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/big-deal";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+        ));
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
@@ -361,9 +366,10 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/account-ratio";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("period"), period.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+            "period" => period,
+        ));
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
@@ -398,25 +404,23 @@ impl Rest {
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/private/order/create";
 
-        let mut query = BTreeMap::new();
-        query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("order_type"), order_type.to_string());
-        query.insert(String::from("qty"), qty.to_string());
+        let mut query = convert_args!(btreemap!(
+            "symbol" => symbol,
+            "order_type" => order_type.to_string(),
+            "qty" => qty.to_string(),
+            "time_in_force" => time_in_force.to_string(),
+            "reduce_only" => reduce_only.to_string(),
+            "close_on_trigger" => close_on_trigger.to_string(),
+        ));
         if let Some(price) = price {
             query.insert(String::from("price"), price.to_string());
         }
-        query.insert(String::from("time_in_force"), time_in_force.to_string());
         if let Some(take_profit) = take_profit {
             query.insert(String::from("take_profit"), take_profit.to_string());
         }
         if let Some(stop_loss) = stop_loss {
             query.insert(String::from("stop_loss"), stop_loss.to_string());
         }
-        query.insert(String::from("reduce_only"), reduce_only.to_string());
-        query.insert(
-            String::from("close_on_trigger"),
-            close_on_trigger.to_string(),
-        );
 
         let mut uri = self
             .endpoint
@@ -427,11 +431,26 @@ impl Rest {
 
         Ok(resp)
     }
+
+    // pub async fn private_order_list(
+    //     &self,
+    //     symbol: Symbol,
+    //     order_status: Option<String>,
+    //     direction: Option<String>,
+    //     limit: Option<usize>,
+    //     cursor: Option<String>,
+    // ) -> Result<RestResponse> {
+    //     const PATH: &str = "/v2/private/order/list";
+
+    //     let mut query = BTreeMap::new();
+    // }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::prelude::{Endpoint, Symbol, API};
+    use crate::rest::enums::{Interval, Period};
+    use chrono::Utc;
     use log::debug;
     use std::collections::BTreeMap;
     use std::env;
@@ -472,7 +491,53 @@ mod tests {
             .endpoint(Endpoint::TESTNET)
             .build();
 
-        assert!(rest.public_orderbook_l2(Symbol::BTCUSD).await.is_ok());
+        let resp = rest.public_orderbook_l2(Symbol::BTCUSD).await;
+        debug!("{:#?}", resp);
+
+        assert!(resp.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_public_server_time() {
+        init();
+
+        let rest = super::RestBuilder::new()
+            .key(API {
+                key: env::var("TESTNET_API_KEY").unwrap(),
+                secret: env::var("TESTNET_API_SECRET").unwrap(),
+            })
+            .endpoint(Endpoint::TESTNET)
+            .build();
+
+        let resp = rest.public_server_time().await;
+        debug!("{:#?}", resp);
+
+        assert!(resp.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_public_kline_list() {
+        init();
+
+        let rest = super::RestBuilder::new()
+            .key(API {
+                key: env::var("TESTNET_API_KEY").unwrap(),
+                secret: env::var("TESTNET_API_SECRET").unwrap(),
+            })
+            .endpoint(Endpoint::TESTNET)
+            .build();
+
+        let resp = rest
+            .public_kline_list(
+                Symbol::BTCUSD,
+                Interval::FiveMin,
+                Utc::now().timestamp() as usize - 300,
+                None,
+            )
+            .await;
+        debug!("{:#?}", resp);
+
+        assert!(resp.is_ok());
     }
 
     #[test]

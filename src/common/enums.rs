@@ -9,3 +9,11 @@ impl ToString for Symbol {
         })
     }
 }
+
+impl Into<String> for Symbol {
+    fn into(self) -> String {
+        String::from(match self {
+            Symbol::BTCUSD => "BTCUSD",
+        })
+    }
+}
