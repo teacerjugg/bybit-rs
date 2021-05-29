@@ -1,6 +1,6 @@
 use super::enums::Topic;
 use super::structs::WsArgs;
-use crate::common::{Endpoint, API};
+use crate::common::{Endpoint, Symbol, API};
 
 use async_tungstenite::{
     async_std::{connect_async, ConnectStream},
@@ -156,13 +156,25 @@ impl Websocket {
         }
     }
 
-    pub async fn subscribe<T>(&mut self, topics: T) -> Result<()>
+    pub async fn subscribe<T>(&mut self, topics: T, symbol: Symbol) -> Result<()>
     where
         T: IntoIterator<Item = Topic>,
     {
         let subscribe = WsArgs {
             op: "subscribe".to_owned(),
-            args: Some(topics.into_iter().map(|t| t.into_string()).collect()),
+            args: Some(
+                topics
+                    .into_iter()
+                    .map(|t| match t {
+                        Topic::OrderBook25
+                        | Topic::OrderBook200
+                        | Topic::Trade
+                        | Topic::Instrument
+                        | Topic::KLine => format!("{}.{}", t.into_string(), symbol.to_string()),
+                        _ => t.into_string(),
+                    })
+                    .collect(),
+            ),
         };
 
         self.ws_stream.send(subscribe.into_msg()).await?;

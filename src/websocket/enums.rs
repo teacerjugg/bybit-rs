@@ -40,12 +40,12 @@ pub enum Topic {
 impl Topic {
     pub fn into_string(self) -> String {
         String::from(match self {
-            Topic::OrderBook25 => "orderBookL2_25.BTCUSD",
-            Topic::OrderBook200 => "orderBook_200.100ms.BTCUSD",
-            Topic::Trade => "trade.BTCUSD",
+            Topic::OrderBook25 => "orderBookL2_25",
+            Topic::OrderBook200 => "orderBook_200.100ms",
+            Topic::Trade => "trade",
             Topic::Insurance => "insurance",
-            Topic::Instrument => "instrument_info.100ms.BTCUSD",
-            Topic::KLine => "klineV2.1.BTCUSD",
+            Topic::Instrument => "instrument_info.100ms",
+            Topic::KLine => "klineV2.1",
             Topic::Position => "position",
             Topic::Execution => "execution",
             Topic::Order => "order",

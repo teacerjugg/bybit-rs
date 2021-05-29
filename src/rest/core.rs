@@ -432,24 +432,43 @@ impl Rest {
         Ok(resp)
     }
 
-    // pub async fn private_order_list(
-    //     &self,
-    //     symbol: Symbol,
-    //     order_status: Option<String>,
-    //     direction: Option<String>,
-    //     limit: Option<usize>,
-    //     cursor: Option<String>,
-    // ) -> Result<RestResponse> {
-    //     const PATH: &str = "/v2/private/order/list";
+    pub async fn private_order_list(
+        &self,
+        symbol: Symbol,
+        order_status: Option<String>,
+        direction: Option<String>,
+        limit: Option<usize>,
+        cursor: Option<String>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/private/order/list";
 
-    //     let mut query = BTreeMap::new();
-    // }
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        if let Some(order_status) = order_status {
+            query.insert(String::from("order_status"), order_status);
+        }
+        if let Some(direction) = direction {
+            query.insert(String::from("direction"), direction);
+        }
+        if let Some(limit) = limit {
+            query.insert(String::from("limit"), limit.to_string());
+        }
+        if let Some(cursor) = cursor {
+            query.insert(String::from("cursor"), cursor);
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::prelude::{Endpoint, Symbol, API};
-    use crate::rest::enums::{Interval, Period};
+    use crate::rest::enums::Interval;
     use chrono::Utc;
     use log::debug;
     use std::collections::BTreeMap;

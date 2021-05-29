@@ -88,3 +88,13 @@ impl Into<String> for Period {
         })
     }
 }
+
+// pub enum OrderStatus {
+//     Filled,
+//     New,
+// }
+
+// pub enum Direction {
+//     Prev,
+//     Next,
+// }
