@@ -24,21 +24,36 @@ use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
 type WSConnection = WebSocketStream<ConnectStream>;
 
-pub struct Websocket {
+pub struct WebSocket {
     endpoint: Endpoint,
     api: API,
     ws_stream: WSConnection,
 }
 
-pub struct WebsocketBuilder<EndpointType, ApiType, WsType> {
+pub struct WebSocketBuilder<EndpointType, ApiType, WsType> {
     endpoint: EndpointType,
     api: ApiType,
     ws_stream: WsType,
 }
 
-impl WebsocketBuilder<(), (), ()> {
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WebSocketResponse {
+    pub topic: String,
+    #[serde(default)]
+    #[serde(rename(deserialize = "type", serialize = "type"))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub msg_type: Option<String>,
+    #[serde(default)]
+    #[serde(rename(deserialize = "timestamp_e6"))]
+    #[serde(with = "serde_option_timestamp")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+    pub data: Value,
+}
+
+impl WebSocketBuilder<(), (), ()> {
     pub fn new() -> Self {
-        WebsocketBuilder {
+        WebSocketBuilder {
             endpoint: (),
             api: (),
             ws_stream: (),
@@ -46,9 +61,9 @@ impl WebsocketBuilder<(), (), ()> {
     }
 }
 
-impl<WsType> WebsocketBuilder<Endpoint, API, WsType> {
-    pub async fn build(self) -> Websocket {
-        Websocket {
+impl<WsType> WebSocketBuilder<Endpoint, API, WsType> {
+    pub async fn build(self) -> WebSocket {
+        WebSocket {
             endpoint: self.endpoint.clone(),
             api: self.api.clone(),
             ws_stream: self
@@ -72,17 +87,17 @@ impl<WsType> WebsocketBuilder<Endpoint, API, WsType> {
     }
 }
 
-impl<EndpointType, ApiType, WsType> WebsocketBuilder<EndpointType, ApiType, WsType> {
-    pub fn endpoint(self, endpoint: Endpoint) -> WebsocketBuilder<Endpoint, ApiType, WsType> {
-        WebsocketBuilder {
+impl<EndpointType, ApiType, WsType> WebSocketBuilder<EndpointType, ApiType, WsType> {
+    pub fn endpoint(self, endpoint: Endpoint) -> WebSocketBuilder<Endpoint, ApiType, WsType> {
+        WebSocketBuilder {
             endpoint,
             api: self.api,
             ws_stream: self.ws_stream,
         }
     }
 
-    pub fn api(self, api: API) -> WebsocketBuilder<EndpointType, API, WsType> {
-        WebsocketBuilder {
+    pub fn api(self, api: API) -> WebSocketBuilder<EndpointType, API, WsType> {
+        WebSocketBuilder {
             endpoint: self.endpoint,
             api,
             ws_stream: self.ws_stream,
@@ -90,7 +105,7 @@ impl<EndpointType, ApiType, WsType> WebsocketBuilder<EndpointType, ApiType, WsTy
     }
 }
 
-impl Websocket {
+impl WebSocket {
     pub async fn connect(&mut self) -> Result<()> {
         let url: Url = match self.endpoint {
             Endpoint::MAINNET => Url::parse("wss://stream.bybit.com/realtime").unwrap(),
@@ -228,8 +243,8 @@ impl Websocket {
         if let Some(msg) = self.ws_stream.next().await {
             let msg = msg?;
 
-            let msg_json: WebsocketResponse =
-                match serde_json::from_str::<WebsocketResponse>(msg.to_text().unwrap()) {
+            let msg_json: WebSocketResponse =
+                match serde_json::from_str::<WebSocketResponse>(msg.to_text().unwrap()) {
                     Ok(res) => res,
                     Err(_) => {
                         if let Ok(res) = serde_json::from_str::<Value>(msg.to_text().unwrap()) {
@@ -276,21 +291,6 @@ impl Websocket {
         // .await
         // .unwrap();
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WebsocketResponse {
-    pub topic: String,
-    #[serde(default)]
-    #[serde(rename(deserialize = "type", serialize = "type"))]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub msg_type: Option<String>,
-    #[serde(default)]
-    #[serde(rename(deserialize = "timestamp_e6"))]
-    #[serde(with = "serde_option_timestamp")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
-    pub data: Value,
 }
 
 mod serde_option_timestamp {
