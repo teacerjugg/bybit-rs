@@ -1,5 +1,6 @@
 use super::{serde_side, serde_tick};
-use crate::websocket::enums::{Order, Tick};
+use crate::common::enums::Order;
+use crate::websocket::enums::Tick;
 use chrono::{DateTime, Utc};
 use serde::{self, Deserialize, Serialize};
 

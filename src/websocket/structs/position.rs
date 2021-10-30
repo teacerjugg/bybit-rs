@@ -1,5 +1,6 @@
 use super::serde_side;
-use crate::websocket::enums::{Order, Status, Trigger};
+use crate::common::enums::Order;
+use crate::websocket::enums::{Status, Trigger};
 use serde::{self, Deserialize, Deserializer, Serialize};
 
 #[derive(Serialize, Deserialize, Default)]

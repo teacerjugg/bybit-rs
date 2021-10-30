@@ -1,3 +1,15 @@
+#[derive(Clone, Debug)]
+pub enum Order {
+    Buy,
+    Sell,
+}
+
+impl Default for Order {
+    fn default() -> Self {
+        Order::Buy
+    }
+}
+
 pub enum Symbol {
     BTCUSD,
     ETHUSD,

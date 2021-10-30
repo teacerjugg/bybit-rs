@@ -24,7 +24,7 @@ impl WsArgs {
 }
 
 pub(crate) mod serde_side {
-    use crate::websocket::enums::Order;
+    use crate::common::enums::Order;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(side: &Order, serializer: S) -> Result<S::Ok, S::Error>

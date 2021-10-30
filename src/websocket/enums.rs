@@ -1,15 +1,3 @@
-#[derive(Clone, Debug)]
-pub enum Order {
-    Buy,
-    Sell,
-}
-
-impl Default for Order {
-    fn default() -> Self {
-        Order::Buy
-    }
-}
-
 #[derive(Debug)]
 pub enum Tick {
     MinusTick,
