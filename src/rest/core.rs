@@ -463,6 +463,80 @@ impl Rest {
 
         Ok(resp)
     }
+
+    pub async fn private_cancel_order(
+        &self,
+        symbol: Symbol,
+        order_id: String,
+        order_link_id: Option<String>,
+    ) -> Result<RestResponse> {
+        const PATH: &str = "/v2/private/order/cancel";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+        query.insert(String::from("order_id"), order_id);
+        if let Some(order_link_id) = order_link_id {
+            query.insert(String::from("order_link_id"), order_link_id);
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn private_cancel_all_orders(&self, symbol: Symbol) -> Result<RestResponse> {
+        const PATH: &str = "/v2/private/order/cancelAll";
+
+        let mut query = BTreeMap::new();
+        query.insert(String::from("symbol"), symbol.to_string());
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
+
+    pub async fn private_replace_order(
+        &self,
+        symbol: Symbol,
+        order_id: String,
+        order_link_id: Option<String>,
+        p_r_qty: Option<usize>,
+        p_r_price: Option<f32>,
+        take_profit: Option<f32>,
+        stop_loss: Option<f32>,
+        tp_trigger_by: Option<String>,
+        sl_trigger_by: Option<String>,
+    ) -> Result<RestResponse> {
+        unimplemented!();
+    }
+
+    pub async fn private_query_order(
+        &self,
+        symbol: Symbol,
+        order_id: Option<String>,
+        order_link_id: Option<String>,
+    ) -> Result<RestResponse> {
+        unimplemented!();
+    }
+
+    pub async fn private_position_list(&self, symbol: Option<Symbol>) -> Result<RestResponse> {
+        const PATH: &str = "/v2/private/position/list";
+
+        let mut query = BTreeMap::new();
+        if let Some(symbol) = symbol {
+            query.insert(String::from("symbol"), symbol.to_string());
+        }
+
+        let mut uri = self.endpoint.to_uri_with_params(query);
+        uri.set_path(PATH);
+        let resp = self.client.get(uri).send().await?.json().await?;
+
+        Ok(resp)
+    }
 }
 
 #[cfg(test)]
