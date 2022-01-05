@@ -502,7 +502,14 @@ impl Rest {
             .endpoint
             .to_uri_with_params(self.construct_query(query));
         uri.set_path(PATH);
-        let resp = self.client.get(uri).send().await?.json().await?;
+        let resp = self
+            .client
+            .post(uri)
+            .header(reqwest::header::CONTENT_LENGTH, 0)
+            .send()
+            .await?
+            .json()
+            .await?;
 
         Ok(resp)
     }
@@ -517,7 +524,14 @@ impl Rest {
             .endpoint
             .to_uri_with_params(self.construct_query(query));
         uri.set_path(PATH);
-        let resp = self.client.get(uri).send().await?.json().await?;
+        let resp = self
+            .client
+            .post(uri)
+            .header(reqwest::header::CONTENT_LENGTH, 0)
+            .send()
+            .await?
+            .json()
+            .await?;
 
         Ok(resp)
     }

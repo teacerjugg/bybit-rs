@@ -21,8 +21,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .api(api)
         .build();
 
-    // dbg!(rest.public_orderbook_l2(Symbol::BTCUSD).await?);
-
+    // submit order
     let order_response: RestResponse = rest
         .private_order_create(
             Side::Buy,
@@ -39,19 +38,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     dbg!(order_response);
 
+    // get orders list
     let order_list: RestResponse = rest
         .private_order_list(Symbol::BTCUSD, None, None, None, None)
         .await?;
     dbg!(order_list);
 
-    // let cancel_response: RestResponse = rest
-    //     .private_cancel_order(Symbol::BTCUSD, "test", None)
-    //     .await?;
-    // dbg!(cancel_response);
-
-    // (0..=5).for_each(|_| {
-    //     sleep(Duration::from_secs(5));
-    // });
+    // cancell all orders
+    let cancel_response: RestResponse = rest.private_cancel_all_orders(Symbol::BTCUSD).await?;
+    dbg!(cancel_response);
 
     Ok(())
 }
