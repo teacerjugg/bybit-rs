@@ -1,8 +1,8 @@
 use super::{
-    enums::{Interval, Period},
+    enums::{Interval, OrderStatus, OrderType, Period, TimeInForce},
     structs::RestResponse,
 };
-use crate::common::{Endpoint, Symbol, API};
+use crate::common::{Endpoint, Side, Symbol, API};
 use hmac::{Hmac, Mac, NewMac};
 use maplit::{btreemap, convert_args};
 use reqwest::{Client, Result};
@@ -56,7 +56,7 @@ impl<EndpointType, ApiType, Client> RestBuilder<EndpointType, ApiType, Client> {
         }
     }
 
-    pub fn key(self, api_key: API) -> RestBuilder<EndpointType, API, Client> {
+    pub fn api(self, api_key: API) -> RestBuilder<EndpointType, API, Client> {
         RestBuilder {
             endpoint: self.endpoint,
             api_key,
@@ -390,27 +390,27 @@ impl Rest {
         Ok(resp)
     }
 
-    pub async fn private_order_create<T: ToString>(
+    pub async fn private_order_create(
         &self,
+        side: Side,
         symbol: Symbol,
-        order_type: T,
+        order_type: OrderType,
         qty: usize,
         price: Option<f32>,
-        time_in_force: T,
+        time_in_force: TimeInForce,
         take_profit: Option<f32>,
         stop_loss: Option<f32>,
-        reduce_only: bool,
-        close_on_trigger: bool,
+        reduce_only: Option<bool>,
+        close_on_trigger: Option<bool>,
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/private/order/create";
 
         let mut query = convert_args!(btreemap!(
+            "side" => side.to_string(),
             "symbol" => symbol,
             "order_type" => order_type.to_string(),
             "qty" => qty.to_string(),
             "time_in_force" => time_in_force.to_string(),
-            "reduce_only" => reduce_only.to_string(),
-            "close_on_trigger" => close_on_trigger.to_string(),
         ));
         if let Some(price) = price {
             query.insert(String::from("price"), price.to_string());
@@ -421,13 +421,30 @@ impl Rest {
         if let Some(stop_loss) = stop_loss {
             query.insert(String::from("stop_loss"), stop_loss.to_string());
         }
+        if let Some(reduce_only) = reduce_only {
+            query.insert(String::from("reduce_only"), reduce_only.to_string());
+        }
+        if let Some(close_on_trigger) = close_on_trigger {
+            query.insert(
+                String::from("close_on_trigger"),
+                close_on_trigger.to_string(),
+            );
+        }
 
         let mut uri = self
             .endpoint
             .to_uri_with_params(self.construct_query(query));
         uri.set_path(PATH);
 
-        let resp = self.client.post(uri).send().await?.json().await?;
+        let resp = self
+            .client
+            .post(uri)
+            //.header(reqwest::header::CONTENT_TYPE, "application/json")
+            .header(reqwest::header::CONTENT_LENGTH, 0)
+            .send()
+            .await?
+            .json()
+            .await?;
 
         Ok(resp)
     }
@@ -435,7 +452,7 @@ impl Rest {
     pub async fn private_order_list(
         &self,
         symbol: Symbol,
-        order_status: Option<String>,
+        order_status: Option<OrderStatus>,
         direction: Option<String>,
         limit: Option<usize>,
         cursor: Option<String>,
@@ -445,7 +462,7 @@ impl Rest {
         let mut query = BTreeMap::new();
         query.insert(String::from("symbol"), symbol.to_string());
         if let Some(order_status) = order_status {
-            query.insert(String::from("order_status"), order_status);
+            query.insert(String::from("order_status"), order_status.to_string());
         }
         if let Some(direction) = direction {
             query.insert(String::from("direction"), direction);
@@ -457,29 +474,33 @@ impl Rest {
             query.insert(String::from("cursor"), cursor);
         }
 
-        let mut uri = self.endpoint.to_uri_with_params(query);
+        let mut uri = self
+            .endpoint
+            .to_uri_with_params(self.construct_query(query));
         uri.set_path(PATH);
         let resp = self.client.get(uri).send().await?.json().await?;
 
         Ok(resp)
     }
 
-    pub async fn private_cancel_order(
+    pub async fn private_cancel_order<T: ToString>(
         &self,
         symbol: Symbol,
-        order_id: String,
+        order_id: T,
         order_link_id: Option<String>,
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/private/order/cancel";
 
         let mut query = BTreeMap::new();
         query.insert(String::from("symbol"), symbol.to_string());
-        query.insert(String::from("order_id"), order_id);
+        query.insert(String::from("order_id"), order_id.to_string());
         if let Some(order_link_id) = order_link_id {
             query.insert(String::from("order_link_id"), order_link_id);
         }
 
-        let mut uri = self.endpoint.to_uri_with_params(query);
+        let mut uri = self
+            .endpoint
+            .to_uri_with_params(self.construct_query(query));
         uri.set_path(PATH);
         let resp = self.client.get(uri).send().await?.json().await?;
 
@@ -492,7 +513,9 @@ impl Rest {
         let mut query = BTreeMap::new();
         query.insert(String::from("symbol"), symbol.to_string());
 
-        let mut uri = self.endpoint.to_uri_with_params(query);
+        let mut uri = self
+            .endpoint
+            .to_uri_with_params(self.construct_query(query));
         uri.set_path(PATH);
         let resp = self.client.get(uri).send().await?.json().await?;
 
@@ -501,24 +524,24 @@ impl Rest {
 
     pub async fn private_replace_order(
         &self,
-        symbol: Symbol,
-        order_id: String,
-        order_link_id: Option<String>,
-        p_r_qty: Option<usize>,
-        p_r_price: Option<f32>,
-        take_profit: Option<f32>,
-        stop_loss: Option<f32>,
-        tp_trigger_by: Option<String>,
-        sl_trigger_by: Option<String>,
+        _symbol: Symbol,
+        _order_id: String,
+        _order_link_id: Option<String>,
+        _p_r_qty: Option<usize>,
+        _p_r_price: Option<f32>,
+        _take_profit: Option<f32>,
+        _stop_loss: Option<f32>,
+        _tp_trigger_by: Option<String>,
+        _sl_trigger_by: Option<String>,
     ) -> Result<RestResponse> {
         unimplemented!();
     }
 
     pub async fn private_query_order(
         &self,
-        symbol: Symbol,
-        order_id: Option<String>,
-        order_link_id: Option<String>,
+        _symbol: Symbol,
+        _order_id: Option<String>,
+        _order_link_id: Option<String>,
     ) -> Result<RestResponse> {
         unimplemented!();
     }
@@ -562,7 +585,7 @@ mod tests {
         hash.insert("key", "value");
 
         let rest = super::RestBuilder::new()
-            .key(API {
+            .api(API {
                 key: String::from("this-is-key"),
                 secret: String::from("this-is-secret"),
             })
@@ -577,7 +600,7 @@ mod tests {
         init();
 
         let rest = super::RestBuilder::new()
-            .key(API {
+            .api(API {
                 key: env::var("TESTNET_API_KEY").unwrap(),
                 secret: env::var("TESTNET_API_SECRET").unwrap(),
             })
@@ -595,7 +618,7 @@ mod tests {
         init();
 
         let rest = super::RestBuilder::new()
-            .key(API {
+            .api(API {
                 key: env::var("TESTNET_API_KEY").unwrap(),
                 secret: env::var("TESTNET_API_SECRET").unwrap(),
             })
@@ -613,7 +636,7 @@ mod tests {
         init();
 
         let rest = super::RestBuilder::new()
-            .key(API {
+            .api(API {
                 key: env::var("TESTNET_API_KEY").unwrap(),
                 secret: env::var("TESTNET_API_SECRET").unwrap(),
             })

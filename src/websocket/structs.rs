@@ -24,28 +24,28 @@ impl WsArgs {
 }
 
 pub(crate) mod serde_side {
-    use crate::common::enums::Order;
+    use crate::common::enums::Side;
     use serde::{self, Deserialize, Deserializer, Serializer};
 
-    pub fn serialize<S>(side: &Order, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(side: &Side, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         let s = match side {
-            Order::Buy => "Buy",
-            Order::Sell => "Sell",
+            Side::Buy => "Buy",
+            Side::Sell => "Sell",
         };
         serializer.serialize_str(&s)
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Order, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Side, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         match s.as_str() {
-            "Buy" => Ok(Order::Buy),
-            "Sell" => Ok(Order::Sell),
+            "Buy" => Ok(Side::Buy),
+            "Sell" => Ok(Side::Sell),
             _ => panic!("Impossible order side"),
         }
     }

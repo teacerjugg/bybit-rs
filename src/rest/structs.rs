@@ -4,7 +4,7 @@ use serde_json::Value;
 
 #[derive(Deserialize, Debug)]
 pub struct RestResponse {
-    pub ret_code: u8,
+    pub ret_code: usize,
     pub ret_msg: String,
     pub ext_code: String,
     pub ext_info: String,

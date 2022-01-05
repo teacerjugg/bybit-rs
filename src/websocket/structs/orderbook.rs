@@ -1,5 +1,5 @@
 use super::serde_side;
-use crate::common::Order;
+use crate::common::Side;
 use chrono::{DateTime, Utc};
 use serde::{self, Deserialize, Deserializer};
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ pub struct Limit {
     #[serde(deserialize_with = "deserialize_price")]
     pub price: f32,
     #[serde(with = "serde_side")]
-    pub side: Order,
+    pub side: Side,
     pub size: u32,
 }
 

@@ -1,5 +1,5 @@
 use super::{serde_side, serde_tick};
-use crate::common::enums::Order;
+use crate::common::enums::Side;
 use crate::websocket::enums::Tick;
 use chrono::{DateTime, Utc};
 use serde::{self, Deserialize, Serialize};
@@ -9,7 +9,7 @@ pub struct Record {
     pub trade_id: String,
     pub price: f32,
     #[serde(with = "serde_side")]
-    pub side: Order,
+    pub side: Side,
     pub size: u32,
     #[serde(rename(deserialize = "trade_time_ms"))]
     #[serde(with = "serde_record_timestamp")]

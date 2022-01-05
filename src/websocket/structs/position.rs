@@ -1,5 +1,5 @@
 use super::serde_side;
-use crate::common::enums::Order;
+use crate::common::enums::Side;
 use crate::websocket::enums::{Status, Trigger};
 use serde::{self, Deserialize, Deserializer, Serialize};
 
@@ -8,7 +8,7 @@ pub struct Position {
     pub user_id: usize,
     pub symbol: String,
     #[serde(with = "serde_side")]
-    pub side: Order,
+    pub side: Side,
     pub size: usize,
     #[serde(deserialize_with = "deserialize_string_to_f32")]
     pub position_value: f32,

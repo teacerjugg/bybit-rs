@@ -1,12 +1,21 @@
 #[derive(Clone, Debug)]
-pub enum Order {
+pub enum Side {
     Buy,
     Sell,
 }
 
-impl Default for Order {
+impl Default for Side {
     fn default() -> Self {
-        Order::Buy
+        Side::Buy
+    }
+}
+
+impl ToString for Side {
+    fn to_string(&self) -> String {
+        String::from(match self {
+            Side::Buy => "Buy",
+            Side::Sell => "Sell",
+        })
     }
 }
 

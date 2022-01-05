@@ -89,10 +89,70 @@ impl Into<String> for Period {
     }
 }
 
-// pub enum OrderStatus {
-//     Filled,
-//     New,
-// }
+pub enum OrderType {
+    Limit,
+    Market,
+}
+
+impl ToString for OrderType {
+    fn to_string(&self) -> String {
+        String::from(match self {
+            OrderType::Limit => "Limit",
+            OrderType::Market => "Market",
+        })
+    }
+}
+
+pub enum TimeInForce {
+    GoodTillCancel,
+    ImmediateOrCancel,
+    FillOrKill,
+    PostOnly,
+}
+
+impl ToString for TimeInForce {
+    fn to_string(&self) -> String {
+        String::from(match self {
+            TimeInForce::GoodTillCancel => "GoodTillCancel",
+            TimeInForce::ImmediateOrCancel => "ImmediateOrCancel",
+            TimeInForce::FillOrKill => "FillOrKill",
+            TimeInForce::PostOnly => "PostOnly",
+        })
+    }
+}
+
+pub enum OrderStatus {
+    Filled,
+    New,
+}
+
+impl ToString for OrderStatus {
+    fn to_string(&self) -> String {
+        String::from(match self {
+            OrderStatus::Filled => "Filled",
+            OrderStatus::New => "New",
+        })
+    }
+}
+
+#[allow(dead_code)]
+pub enum ReturnCode {
+    /// ret_code
+    /// Example:
+    /// RestResponse {
+    ///     ret_code: 33004,
+    ///     ret_msg: "api_key expire",
+    ///     ext_code: "",
+    ///     ext_info: "",
+    ///     result: Null,
+    ///     timestamp: 2022-01-04T10:41:11.629Z,
+    ///     rate_limit_status: None,
+    ///     rate_limit_reset_ms: None,
+    ///     rate_limit: None,
+    /// }
+    OK, // 0
+    APIKeyExpired, // 33004
+}
 
 // pub enum Direction {
 //     Prev,
