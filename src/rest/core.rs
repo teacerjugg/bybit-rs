@@ -177,16 +177,12 @@ impl Rest {
     pub async fn public_trading_records(
         &self,
         symbol: Symbol,
-        from: Option<usize>,
         limit: Option<usize>,
     ) -> Result<RestResponse> {
         const PATH: &str = "/v2/public/trading-records";
 
         let mut query = BTreeMap::new();
         query.insert(String::from("symbol"), symbol.to_string());
-        if let Some(from) = from {
-            query.insert(String::from("from"), from.to_string());
-        }
         if let Some(limit) = limit {
             query.insert(String::from("limit"), limit.to_string());
         }
